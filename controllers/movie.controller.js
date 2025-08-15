@@ -1,0 +1,127 @@
+
+import CatchAsyncError from "../middleware/catchAsyncError.js";
+import { fetchFromTMDB } from "../services/tmdb.service.js";
+import ErrorHandler from "../utils/ErrorHandler.js";
+
+export const getTrendingMovies = CatchAsyncError(async (req, res) => {
+  try {
+    let response = await fetchFromTMDB(
+      `https://api.themoviedb.org/3/trending/${req.query.content || 'movie'}/day?language=en-US&page=${req.params.page}`
+    );
+    return res.status(200).json({
+      success: true,
+      count: response.results.length,
+      data: response.results,
+    });
+  } catch (error) {
+    return next(new ErrorHandler(error.message, 400));
+  }
+});
+
+export const searchMoviesByName = CatchAsyncError(async (req, res, next) => {
+  try {
+    console.log(req.params.page, req.query.keyword);
+    let response = await fetchFromTMDB(
+      `https://api.themoviedb.org/3/search/multi?query=${req.query.keyword}&include_adult=false&language=en-US&page=${req.params.page}`
+    );
+    console.log("hello");
+    console.log(response);
+    return res.status(200).json({
+      success: true,
+      count: response.results.length,
+      data: response.results,
+    });
+  } catch (error) {
+    return next(new ErrorHandler(error.message, 400));
+  }
+});
+
+export const filterByGenres = CatchAsyncError(async (req, res, next) => {
+  try {
+    let response = await fetchFromTMDB(
+      `https://api.themoviedb.org/3/discover/${req.query.content || 'movie'}?include_adult=false&include_video=false&language=en-US&page=${req.params.page}&sort_by=popularity.desc&with_genres=${req.query.genre}`
+    );
+    return res.status(200).json({
+      success: true,
+      count: response.results.length,
+      data: response.results,
+    });
+  } catch (error) {
+    return next(new ErrorHandler(error.message, 400));
+  }
+});
+
+export const getGenres = CatchAsyncError(async (req, res, next) => {
+  try {
+    let response = await fetchFromTMDB(
+      `https://api.themoviedb.org/3/genre/${req.query.content || 'movie'}/list?language=en`
+    );
+    return res.status(200).json({ success: true, data: response.genres });
+  } catch (error) {
+    return next(new ErrorHandler(error, message, 400));
+  }
+});
+
+export const getMovieDetail = CatchAsyncError(async (req, res, next) => {
+  try {
+    let response = await fetchFromTMDB(
+      `https://api.themoviedb.org/3/${req.query.content || 'movie'}/${req.params.id}?language=en-US`
+    );
+    return res.status(200).json({ success: true, data: response });
+  } catch (error) {
+    return next(new ErrorHandler(error.message, 400));
+  }
+});
+
+export const getMovieTrailers = CatchAsyncError(async (req, res, next) => {
+  try {
+    let response = await fetchFromTMDB(
+      `https://api.themoviedb.org/3/${req.query.content || 'movie'}/${req.params.id}/videos?language=en-US`
+    );
+    return res.status(200).json({ success: true, data: response.results });
+  } catch (error) {
+    return next(new ErrorHandler(error.message, 400));
+  }
+});
+
+export const getUserMediaList = (listType) => CatchAsyncError(async (req, res, next) => {
+  try {
+    if (!req?.user) {
+      return next(new ErrorHandler("JWT error", 401));
+    }
+
+    // Map the listType to the corresponding array in the user schema
+    const listMap = {
+      favoritesMovies: req.user?.favoritesMovies,
+      favoritesTV: req.user?.favoritesTV,
+      bookmarksMovies: req.user?.bookmarksMovies,
+      bookmarksTV: req.user?.bookmarksTV
+    };
+
+    const mediaIds = listMap[listType] || [];
+
+    if (mediaIds.length === 0) {
+      return res.status(200).json({ success: true, count: 0, data: [] });
+    }
+
+    // Detect whether this list is movies or tv
+    const contentType = listType.toLowerCase().includes("tv") ? "tv" : "movie";
+
+    const requests = mediaIds.map((id) =>
+      fetchFromTMDB(`https://api.themoviedb.org/3/${contentType}/${id}?language=en-US`)
+        .catch(() => null) // skip failed requests
+    );
+
+    const results = (await Promise.all(requests)).filter(Boolean);
+
+    return res.status(200).json({
+      success: true,
+      count: results.length,
+      data: results
+    });
+
+  } catch (error) {
+    return next(new ErrorHandler(error.message, 500));
+  }
+});
+
