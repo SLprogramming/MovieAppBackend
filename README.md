@@ -1,6 +1,6 @@
-# LMS Backend
+# MovieApp Backend
 
-This is the backend for the Learning Management System (LMS) application. It is built using Node.js, Express, MongoDB, and Redis.
+This is the backend for the Learning Management System (MovieApp) application. It is built using Node.js, Express, MongoDB, and Redis.
 
 ## Table of Contents
 
@@ -15,8 +15,8 @@ This is the backend for the Learning Management System (LMS) application. It is 
 1. Clone the repository:
 
     ```sh
-    git clone https://github.com/TaingLinnMaung/lms_backend.git
-    cd lms-backend
+    git clone https://github.com/SLprogramming/MovieAppBackend.git
+    cd MovieAppBackend
     ```
 
 2. Install the dependencies:
