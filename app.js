@@ -6,6 +6,7 @@ import {ErrorMiddleware} from "./middleware/error.js"
 import userRouter from "./routes/user.route.js"
 import movieRouter from "./routes/movie.route.js"
 import planRouter from "./routes/plan.route.js"
+import purchaseRequestRouter from "./routes/purchaseRequest.route.js"
 
 
 export const app = express()
@@ -29,6 +30,7 @@ app.use(cors())
 app.use("/api",userRouter)
 app.use("/api",movieRouter)
 app.use("/api/plan",planRouter)
+app.use("/api/purchase",purchaseRequestRouter)
 
 
 //api

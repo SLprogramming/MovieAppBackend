@@ -22,10 +22,10 @@ const userSchema = new mongoose.Schema({
     },
     unique:true,
   },
-   premiumExpire: {
-    type: Number,
-    default: null, // null means not premium
-  },
+  premiumExpire: {
+  type: Date,
+  default: null, // null means not premium
+},
   password: {
     type: String,
     // required:[true,'Please enter your password'],
@@ -93,9 +93,23 @@ userSchema.methods.SignRefreshToken =  function () {
 
 //check premium
 userSchema.methods.isPremiumActive = function() {
-  if (!this.premiumExpire) return false; // no premium
-  return Date.now() < this.premiumExpire;
+  if (!this.premiumExpire) return false;
+  return Date.now() < this.premiumExpire.getTime();
 }
 
+//activate premium
+userSchema.methods.activatePremium = async function(days) {
+  const msToAdd = days * 24 * 60 * 60 * 1000;
+
+  if (this.isPremiumActive()) {
+    // extend current premium
+    this.premiumExpire = new Date(this.premiumExpire.getTime() + msToAdd);
+  } else {
+    // start premium from now
+    this.premiumExpire = new Date(Date.now() + msToAdd);
+  }
+
+  return this.save();
+}
 const userModel = mongoose.model("User", userSchema);
 export default userModel

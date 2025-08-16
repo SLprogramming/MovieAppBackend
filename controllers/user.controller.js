@@ -308,15 +308,8 @@ export const activatePremium = CatchAsyncError(async (req,res,next) => {
         if(!user){
             return next(new ErrorHandler("user not found!",404))
         }
-        let newExpire
-        console.log(user.isPremiumActive(),user.premiumExpire)
-        if(user.isPremiumActive()){
-            newExpire = (user.premiumExpire || 0) + (days * 24 * 60 * 60 * 1000)
-        }else{
-            newExpire = Date.now() + (days * 24 * 60 * 60 * 1000)
-        }
-        console.log(newExpire,Date.now() +  20)
-        let updatedUser = await userModel.findOneAndUpdate({_id:id},{premiumExpire:newExpire},{new:true})
+       
+        let updatedUser = await user.activatePremium(days)
         return res.status(200).json({message:'successfully subscribe',data:updatedUser})
 
     } catch (error) {
@@ -324,6 +317,7 @@ export const activatePremium = CatchAsyncError(async (req,res,next) => {
     }
 })
 
+// to add bookmarks and favorite 
 export const addToList = CatchAsyncError(async (req, res, next) => {
     try {
         const { type, flag, id } = req.body; 
@@ -368,3 +362,13 @@ export const addToList = CatchAsyncError(async (req, res, next) => {
         return next(new ErrorHandler(error.message, 400));
     }
 });
+
+
+export const getPremiumUser = CatchAsyncError(async (req, res, next) => {
+    try {
+        const activePremiumUsers = await userModel.find({ premiumExpire: { $gt: new Date() } });
+        return res.status(200).json({success:true,count:activePremiumUsers.length,data:activePremiumUsers})
+    } catch (error) {
+        return next(new ErrorHandler(error.message, 400))
+    }
+})

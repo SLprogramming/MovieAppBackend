@@ -7,7 +7,7 @@ import {  createPremiumPlan,
 
 const planRouter = express.Router()
 
-planRouter.get('/get',getAllPremiumPlans)
+planRouter.get('/get-all',getAllPremiumPlans)
 planRouter.get('/get/:id',getPremiumPlanById)
 planRouter.post('/create',createPremiumPlan)
 planRouter.put('/update/:id',updatePremiumPlan)
