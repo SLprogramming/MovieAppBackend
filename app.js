@@ -19,12 +19,29 @@ app.use(express.json({limit:"50mb"}))
 //cookie parser
 app.use(cookieParser())
 
-//cors
-// app.use(cors({
-//     origin:process.env.ORIGIN
-// }))
+const allowedOrigins = [
+  "http://192.168.110.125:5173",
+  "http://localhost:4173"
+];
 
-app.use(cors())
+app.use(cors({
+  origin: function(origin, callback) {
+    if (!origin) return callback(null, true); // allow non-browser requests
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true); // ✅ allow this origin
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true, // allow cookies
+}));
+
+// app.use(cors({
+//   origin: "http://192.168.110.125:5173", // exact frontend origin
+//   credentials: true,                      // 🔑 allow cookies
+// }));
+
+// app.use(cors())
 
 
 app.use("/api",userRouter)

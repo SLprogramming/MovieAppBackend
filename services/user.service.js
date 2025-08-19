@@ -7,10 +7,10 @@ export const getUserById = async (id,res) => {
     const userJson = await userModel.findById(id)
 
     if(userJson){
-        const user = JSON.parse(userJson)
+        
     res.status(201).json({
         success:true,
-        user,
+        user:userJson,
     })
     }
 }

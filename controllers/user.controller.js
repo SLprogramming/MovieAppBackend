@@ -45,7 +45,8 @@ export const registrationUser = CatchAsyncError(async (req, res, next) => {
 
     try {
       await sendMail({
-        email: user.email,
+        // email: user.email,
+        email:'joesat2516@gmail.com',
         subject: "Activate your account",
         template: "activation-mail.ejs",
         data,
@@ -173,8 +174,8 @@ export const updateAccessToken = CatchAsyncError(async (req,res,next) =>{
         if(!session) {
             return next(new ErrorHandler(message,400)) 
         }
-
-        const user =  JSON.parse(session)
+        console.log(session)
+        const user =  session
 
         const accessToken = jwt.sign({id:user._id},process.env.ACCESS_TOKEN,{
             expiresIn:"5m"
@@ -203,6 +204,7 @@ export const updateAccessToken = CatchAsyncError(async (req,res,next) =>{
 ///get user info
 export const getUserInfo = CatchAsyncError(async (req,res,next) => {
     try {
+        // console.log(req.params.id)
         const userId = req.user?._id
         getUserById(userId,res)
         
@@ -300,6 +302,9 @@ export const updatePassword = CatchAsyncError(async (req,res,next) => {
     }
 })
 
+export const promoteAdmin = CatchAsyncError(async(req,res,next) => {
+
+})
 
 export const activatePremium = CatchAsyncError(async (req,res,next) => {
     try {
@@ -310,7 +315,7 @@ export const activatePremium = CatchAsyncError(async (req,res,next) => {
         }
        
         let updatedUser = await user.activatePremium(days)
-        return res.status(200).json({message:'successfully subscribe',data:updatedUser})
+        return res.status(200).json({success:true,message:'successfully subscribe',data:updatedUser})
 
     } catch (error) {
         return next(new ErrorHandler(error.message,400))
@@ -371,4 +376,36 @@ export const getPremiumUser = CatchAsyncError(async (req, res, next) => {
     } catch (error) {
         return next(new ErrorHandler(error.message, 400))
     }
+})
+
+export const getAllUsers = CatchAsyncError(async (req, res, next) => {
+  try {
+    // Get page & limit from query, fallback to defaults
+    const page = parseInt(req.query.page) || 1
+    const limit = parseInt(req.query.limit) || 5
+    const skip = (page - 1) * limit
+
+    const filter = { 
+  _id: { $ne: req.user._id }, 
+  role: { $ne: "superAdmin" } 
+};
+    // Fetch users with pagination
+    const users = await userModel.find(filter).skip(skip).limit(limit)
+
+    // Count total documents
+    const totalUsers = await userModel.countDocuments(filter)
+
+    return res.status(200).json({
+      success: true,
+      users,
+      pagination: {
+        totalUsers,
+        totalPages: Math.ceil(totalUsers / limit),
+        currentPage: page,
+        pageSize: limit,
+      },
+    })
+  } catch (error) {
+    return next(new ErrorHandler(error.message, 400))
+  }
 })
