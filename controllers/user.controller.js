@@ -292,7 +292,7 @@ export const updatePassword = CatchAsyncError(async (req,res,next) => {
         await user.save()
         // await redis.set(userId,JSON.stringify(user))
 
-        res.status(200).json({
+       return res.status(200).json({
             success:true,
             user,
         })
@@ -303,7 +303,23 @@ export const updatePassword = CatchAsyncError(async (req,res,next) => {
 })
 
 export const promoteAdmin = CatchAsyncError(async(req,res,next) => {
-
+   try {
+            const {id} = req.params
+            const {role = 'user'} = req.body
+            const user = await userModel.findById(id)
+            if(!user){
+                return next(new ErrorHandler("user not found!",404))
+            }
+            
+            user.role = role
+            await user.save()
+           return res.status(200).json({
+            success:true,
+            user,
+        })
+        } catch (error) {
+            return next(new ErrorHandler(error.message, 400))
+        }
 })
 
 export const activatePremium = CatchAsyncError(async (req,res,next) => {
@@ -382,7 +398,7 @@ export const getAllUsers = CatchAsyncError(async (req, res, next) => {
   try {
     // Get page & limit from query, fallback to defaults
     const page = parseInt(req.query.page) || 1
-    const limit = parseInt(req.query.limit) || 5
+    const limit = parseInt(req.query.limit) || 10
     const skip = (page - 1) * limit
 
     const filter = { 

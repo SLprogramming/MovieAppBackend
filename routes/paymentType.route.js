@@ -6,8 +6,8 @@ import {
   getPaymentTypeById,
   togglePaymentType,
   updatePaymentType,
-} from "../controllers/paymentType.controller";
-import { authorizeRoles, isAuthenticated } from "../middleware/auth";
+} from "../controllers/paymentType.controller.js";
+import { authorizeRoles, isAuthenticated } from "../middleware/auth.js";
 
 const paymentTypeRouter = e.Router();
 

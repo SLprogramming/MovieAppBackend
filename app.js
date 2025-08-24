@@ -7,6 +7,8 @@ import userRouter from "./routes/user.route.js"
 import movieRouter from "./routes/movie.route.js"
 import planRouter from "./routes/plan.route.js"
 import purchaseRequestRouter from "./routes/purchaseRequest.route.js"
+import paymentTypeRouter from "./routes/paymentType.route.js"
+import bankAccountRouter from "./routes/bankAccount.route.js"
 
 
 export const app = express()
@@ -21,7 +23,7 @@ app.use(cookieParser())
 
 const allowedOrigins = [
   "http://192.168.110.125:5173",
-  "http://localhost:4173"
+  "http://192.168.110.125:5174"
 ];
 
 app.use(cors({
@@ -48,6 +50,8 @@ app.use("/api",userRouter)
 app.use("/api",movieRouter)
 app.use("/api/plan",planRouter)
 app.use("/api/purchase",purchaseRequestRouter)
+app.use("/api/payment",paymentTypeRouter)
+app.use("/api/bankAccount",bankAccountRouter)
 
 
 //api

@@ -6,7 +6,8 @@ import CatchAsyncError from "../middleware/catchAsyncError.js";
 export const createBankAccount = CatchAsyncError(async (req, res, next) => {
   try {
     const account = await BankAccount.create(req.body);
-    res.status(201).json({ success: true, data: account });
+    let data = await account.populate('paymentType_id')
+    res.status(201).json({ success: true, data });
   } catch (error) {
     return next(new ErrorHandler(error.message, 500));
   }
@@ -35,6 +36,34 @@ export const getBankAccountById = CatchAsyncError(async (req, res, next) => {
     return next(new ErrorHandler(error.message, 500));
   }
 });
+
+export const getBankAccountByPaymentId = CatchAsyncError(
+  async (req, res, next) => {
+    try {
+      const { id } = req.params;
+
+      // Fetch all bank accounts with matching paymentType_id
+      const response = await BankAccount.find({ paymentType_id: id });
+
+      // If no accounts found, you can handle it (optional)
+      if (!response || response.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "No bank accounts found for this payment type",
+        });
+      }
+
+      // Success response
+      return res.status(200).json({
+        success: true,
+        data: response,
+      });
+    } catch (error) {
+      return next(new ErrorHandler(error.message, 400));
+    }
+  }
+);
+
 
 // UPDATE
 export const updateBankAccount = CatchAsyncError(async (req, res, next) => {
@@ -68,7 +97,7 @@ export const deleteBankAccount = CatchAsyncError(async (req, res, next) => {
 export const toggleBankAccount = CatchAsyncError(async (req, res, next) => {
   try {
     const { flag = true } = req.body; // optional, default true
-    const account = await BankAccount.findById(req.params.id);
+    const account = await BankAccount.findById(req.params.id).populate("paymentType_id");
     if (!account) return next(new ErrorHandler("Bank account not found", 404));
 
     const updatedAccount = await account.activeToggle(flag);

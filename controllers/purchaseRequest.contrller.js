@@ -27,7 +27,7 @@ export const getPurchaseRequestById = CatchAsyncError(async (req, res, next) => 
 // create
 export const createPurchaseRequest = CatchAsyncError(async (req, res, next) => {
     try {
-        const { user_id, plan_id, transitionNumber } = req.body;
+        const { user_id, plan_id, transitionNumber ,bankAccount_id } = req.body;
 
         if (!req.file) {
             return res.status(400).json({ message: "Image is required" });
@@ -45,7 +45,8 @@ export const createPurchaseRequest = CatchAsyncError(async (req, res, next) => {
             img: {
                 url: result.secure_url,    // Cloudinary URL
                 public_id: result.public_id // Cloudinary public_id
-            }
+            },
+            bankAccount_id
         });
 
         res.status(201).json({

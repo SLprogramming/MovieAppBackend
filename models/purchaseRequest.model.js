@@ -27,6 +27,11 @@ const purchaseRequestSchema = new mongoose.Schema({
      img: {
         url: { type: String, required: true },        // store Cloudinary URL
         public_id: { type: String, required: true }   // store Cloudinary public_id
+    },
+    bankAccount_id:{
+         type:mongoose.Schema.Types.ObjectId,
+        ref:"BankAccount",
+        require:[true,"select an account"]
     }
 }, { timestamps: true });
 
