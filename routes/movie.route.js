@@ -1,5 +1,5 @@
 import express from "express"
-import { filterByGenres, getUserMediaList, getGenres, getMovieDetail, getMovieTrailers, getTrendingMovies,searchMoviesByName } from "../controllers/movie.controller.js";
+import { filterByGenres, getUserMediaList, getGenres, getMovieDetail, getMovieTrailers, getTrendingMovies,searchMoviesByName, getCast, getSimilar } from "../controllers/movie.controller.js";
 import { isAuthenticated } from "../middleware/auth.js";
 
 const movieRouter = express.Router()
@@ -17,6 +17,10 @@ movieRouter.get('/content/get-genres',getGenres)
 movieRouter.get('/content/get-detail/:id',getMovieDetail)
 
 movieRouter.get('/content/get-trailers/:id',getMovieTrailers)
+
+movieRouter.get('/content/get-cast/:id',getCast)
+
+movieRouter.get('/content/get-similar/:id',getSimilar)
 
 movieRouter.get('/content/get/favourite/movie',getUserMediaList('favoritesMovies'))
 

@@ -62,6 +62,25 @@ export const getGenres = CatchAsyncError(async (req, res, next) => {
   }
 });
 
+export const getSimilar = CatchAsyncError(async (req, res, next) => {
+    try {
+      
+        let response = await fetchFromTMDB(`https://api.themoviedb.org/3/${req.query.content}/${req.params.id}/similar?language=en-US&page=1`)
+        return res.status(200).json({success:true,data:response.results})
+    } catch (error) {
+        return next(new ErrorHandler(error.message, 400))
+    }
+})
+
+export const getCast = CatchAsyncError(async (req, res, next) => {
+    try {
+        let response = await fetchFromTMDB(`https://api.themoviedb.org/3/${req.query.content}/${req.params.id}/aggregate_credits?language=en-US`)
+        return res.status(200).json({success:true,data:response.cast})
+    } catch (error) {
+        return next(new ErrorHandler(error.message, 400))
+    }
+})
+
 export const getMovieDetail = CatchAsyncError(async (req, res, next) => {
   try {
     let response = await fetchFromTMDB(
