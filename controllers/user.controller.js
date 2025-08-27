@@ -42,6 +42,7 @@ export const registrationUser = CatchAsyncError(async (req, res, next) => {
       path.join(__dirname, "../mails/activation-mail.ejs"),
       data
     );
+    let expireDate = Date.now() + (5 * 60 * 1000)
 
     try {
       await sendMail({
@@ -55,6 +56,7 @@ export const registrationUser = CatchAsyncError(async (req, res, next) => {
         success: true,
         message: `Please check your email: ${user.email} to activate your account!`,
         activationToken: activationToken.token,
+        expireIn:expireDate,
       });
     } catch (error) {
       return next(new ErrorHandler(error.message, 400));
@@ -67,7 +69,7 @@ export const registrationUser = CatchAsyncError(async (req, res, next) => {
 
 //create activation token
 export const createActivationToken = (user) => {
-  const activationCode = Math.floor(1000 + Math.random() * 9000).toString();
+  const activationCode = Math.floor(1000 + Math.random() * 900000).toString();
   const token = jwt.sign(
     { user, activationCode },
     process.env.ACTIVATION_SECRET,
