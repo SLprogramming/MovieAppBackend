@@ -7,7 +7,11 @@ dotEnv.config()
 
 //create server
 
-app.listen(process.env.PORT,process.env.LOCAL_IP_ADDRESS,() => {
-    console.log(`server is running on http://${process.env.LOCAL_IP_ADDRESS}:${process.env.PORT}`)
+app.listen(process.env.PORT,() => {
+    console.log(`server is running on http://:${process.env.PORT}`)
     connectDB()
 })
+// app.listen(process.env.PORT,process.env.LOCAL_IP_ADDRESS,() => {
+//     console.log(`server is running on http://${process.env.LOCAL_IP_ADDRESS}:${process.env.PORT}`)
+//     connectDB()
+// })
