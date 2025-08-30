@@ -103,44 +103,26 @@ export const getMovieTrailers = CatchAsyncError(async (req, res, next) => {
   }
 });
 
-export const getUserMediaList = (listType) => CatchAsyncError(async (req, res, next) => {
+export const getUserMediaList = async (mediaIds, contentType) => {
   try {
-    if (!req?.user) {
-      return next(new ErrorHandler("JWT error", 401));
-    }
-
-    // Map the listType to the corresponding array in the user schema
-    const listMap = {
-      favoritesMovies: req.user?.favoritesMovies,
-      favoritesTV: req.user?.favoritesTV,
-      bookmarksMovies: req.user?.bookmarksMovies,
-      bookmarksTV: req.user?.bookmarksTV
-    };
-
-    const mediaIds = listMap[listType] || [];
-
-    if (mediaIds.length === 0) {
-      return res.status(200).json({ success: true, count: 0, data: [] });
-    }
-
-    // Detect whether this list is movies or tv
-    const contentType = listType.toLowerCase().includes("tv") ? "tv" : "movie";
+    if (!mediaIds || mediaIds.length === 0) return [];
 
     const requests = mediaIds.map((id) =>
       fetchFromTMDB(`https://api.themoviedb.org/3/${contentType}/${id}?language=en-US`)
         .catch(() => null) // skip failed requests
     );
 
-    const results = (await Promise.all(requests)).filter(Boolean);
+    const results = await Promise.all(requests);
 
-    return res.status(200).json({
-      success: true,
-      count: results.length,
-      data: results
-    });
+    // Filter out null values
+    const validResults = results.filter((item) => item !== null);
 
+    if (contentType === 'movie') console.log(validResults);
+
+    return validResults;
   } catch (error) {
-    return next(new ErrorHandler(error.message, 500));
+    return [];
   }
-});
+};
+
 

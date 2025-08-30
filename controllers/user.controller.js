@@ -12,6 +12,7 @@ import commonPasswords from "../staticData/commonPassword.js"
 // import { redis } from "../config/redis.js";
 import { decode } from "punycode";
 import { getUserById } from "../services/user.service.js";
+import { getUserMediaList } from "./movie.controller.js";
 
 dotEnv.config();
 
@@ -35,6 +36,7 @@ export const registrationUser = CatchAsyncError(async (req, res, next) => {
     const activationToken = createActivationToken(user);
 
     const activationCode = activationToken.activationCode;
+    console.log(activationCode)
 
     const data = { user: { name: user.name }, activationCode };
 
@@ -45,13 +47,13 @@ export const registrationUser = CatchAsyncError(async (req, res, next) => {
     let expireDate = Date.now() + (5 * 60 * 1000)
 
     try {
-      await sendMail({
-        // email: user.email,
-        email:'joesat2516@gmail.com',
-        subject: "Activate your account",
-        template: "activation-mail.ejs",
-        data,
-      });
+    //   await sendMail({
+    //     // email: user.email,
+    //     email:'joesat2516@gmail.com',
+    //     subject: "Activate your account",
+    //     template: "activation-mail.ejs",
+    //     data,
+    //   });
       res.status(201).json({
         success: true,
         message: `Please check your email: ${user.email} to activate your account!`,
@@ -346,10 +348,10 @@ export const addToList = CatchAsyncError(async (req, res, next) => {
         const { type, flag, id } = req.body; 
         // type: "favorite" or "bookmark"
         // flag: "movie" or "tv"
-
+        
         const userId = req.user?._id;
         if (!id) return next(new ErrorHandler("Movie or series ID is required!", 400));
-        if (!["favorite", "bookmark"].includes(type)) return next(new ErrorHandler("Invalid type!", 400));
+        if (!["favorite", "bookmark","recent"].includes(type)) return next(new ErrorHandler("Invalid type!", 400));
         if (!["movie", "tv"].includes(flag)) return next(new ErrorHandler("Invalid flag!", 400));
 
         const user = await userModel.findById(userId);
@@ -364,26 +366,98 @@ export const addToList = CatchAsyncError(async (req, res, next) => {
             bookmark: {
                 movie: "bookmarksMovies",
                 tv: "bookmarksTV"
+            },
+            recent: {
+                movie: "recentMovies",
+                tv: "recentTV"
             }
         };
 
         const arrayKey = keyMap[type][flag];
 
-        if (user[arrayKey].includes(id)) {
+        if (user[arrayKey].includes(id.toString())) {
             return next(new ErrorHandler(`This ${flag} is already in ${type}s`, 400));
         }
+        let mediaData = await getUserMediaList([id],flag)
 
-        user[arrayKey].push(id);
+      if (type === "recent") {
+    // Remove if it already exists
+    user[arrayKey] = user[arrayKey].filter(item => item.toString() !== id.toString());
+
+    // Add new one at the end
+    user[arrayKey].push(id.toString());
+
+    // Keep only last 20
+    if (user[arrayKey].length > 20) {
+        user[arrayKey] = user[arrayKey].slice(-20);
+    }
+}else{
+
+    user[arrayKey].push(id.toString());
+}
+
         await user.save();
 
         return res.status(200).json({
             success: true,
-            message: `Successfully added into ${type}s`
+            message: `Successfully added into ${type}s`,
+            data:mediaData[0],
+           
+            
         });
 
     } catch (error) {
         return next(new ErrorHandler(error.message, 400));
     }
+});
+
+// to remove bookmarks and favorite
+export const removeFromList = CatchAsyncError(async (req, res, next) => {
+  try {
+    const { type, flag, id } = req.body; 
+    // type: "favorite" or "bookmark"
+    // flag: "movie" or "tv"
+
+    const userId = req.user?._id;
+    if (!id) return next(new ErrorHandler("Movie or series ID is required!", 400));
+    if (!["favorite", "bookmark"].includes(type)) return next(new ErrorHandler("Invalid type!", 400));
+    if (!["movie", "tv"].includes(flag)) return next(new ErrorHandler("Invalid flag!", 400));
+
+    const user = await userModel.findById(userId);
+    if (!user) return next(new ErrorHandler("User not found!", 404));
+
+    // Map keys dynamically
+    const keyMap = {
+      favorite: {
+        movie: "favoritesMovies",
+        tv: "favoritesTV"
+      },
+      bookmark: {
+        movie: "bookmarksMovies",
+        tv: "bookmarksTV"
+      }
+    };
+
+    const arrayKey = keyMap[type][flag];
+
+    if (!user[arrayKey].includes(id)) {
+      return next(new ErrorHandler(`This ${flag} is not in your ${type}s`, 400));
+    }
+
+    // Remove ID
+    user[arrayKey] = user[arrayKey].filter(item => item.toString() !== id.toString());
+
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: `Successfully removed from ${type}s`,
+
+    });
+
+  } catch (error) {
+    return next(new ErrorHandler(error.message, 400));
+  }
 });
 
 

@@ -56,6 +56,14 @@ const userSchema = new mongoose.Schema({
     type: [String], 
     default: [],
   },
+  recentMovies: {
+    type: [String],
+    default: [],
+  },
+  recentTV: {
+    type: [String], 
+    default: [],
+  },
   favoritesTV: {
     type: [String],
     default: [],
