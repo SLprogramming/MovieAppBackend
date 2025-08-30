@@ -22,7 +22,7 @@ app.use(express.json({limit:"50mb"}))
 app.use(cookieParser())
 
 const allowedOrigins = [
-  "https://movie-app-website-mu.vercel.app/login",
+  "https://movie-app-website-mu.vercel.app",
   "http://192.168.110.125:5173",
   "http://192.168.110.125:5174"
 ];
