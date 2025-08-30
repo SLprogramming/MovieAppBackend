@@ -375,7 +375,7 @@ export const addToList = CatchAsyncError(async (req, res, next) => {
 
         const arrayKey = keyMap[type][flag];
 
-        if (user[arrayKey].includes(id.toString())) {
+        if (user[arrayKey].includes(id.toString()) && type !='recent') {
             return next(new ErrorHandler(`This ${flag} is already in ${type}s`, 400));
         }
         let mediaData = await getUserMediaList([id],flag)
