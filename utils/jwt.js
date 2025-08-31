@@ -13,17 +13,17 @@ dotEnv.config()
        expires:new Date(Date.now() + accessTokenExpire * 60 * 60 * 1000),
        maxAge:accessTokenExpire * 60 * 60 *  1000,
        httpOnly:true,
-       sameSite:'none',
+       sameSite:'lax',
        path: '/',
-       secure:true,
+    //    secure:true,
    }
   export const refreshTokenOptions = {
        expires:new Date(Date.now() + refreshTokenExpire * 24 * 60 * 60 * 1000),
        maxAge:refreshTokenExpire * 24 * 60 * 60 * 1000,
        httpOnly:true,
        path: '/',
-       sameSite:'none',  // lax for dev , none for deploy
-       secure:true,  // secure true for deploy
+       sameSite:'lax',  // lax for dev , none for deploy
+    //    secure:true,  // secure true for deploy
    }
 
 export const sendToken = (user,statusCode,res) => {
@@ -39,6 +39,9 @@ export const sendToken = (user,statusCode,res) => {
     //only set secure to true in production
     if(process.env.NODE_ENV ==='production'){
         accessTokenOptions.secure = true
+        accessTokenOptions.sameSite = 'none'
+        refreshTokenOptions.secure = true
+        refreshTokenOptions.sameSite = 'none'
     }
 
     res.cookie("access_token",accessToken,accessTokenOptions)

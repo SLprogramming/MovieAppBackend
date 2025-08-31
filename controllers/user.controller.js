@@ -13,6 +13,7 @@ import commonPasswords from "../staticData/commonPassword.js"
 import { decode } from "punycode";
 import { getUserById } from "../services/user.service.js";
 import { getUserMediaList } from "./movie.controller.js";
+import { fetchFromTMDB } from "../services/tmdb.service.js";
 
 dotEnv.config();
 
@@ -378,7 +379,7 @@ export const addToList = CatchAsyncError(async (req, res, next) => {
         if (user[arrayKey].includes(id.toString()) && type !='recent') {
             return next(new ErrorHandler(`This ${flag} is already in ${type}s`, 400));
         }
-        let mediaData = await getUserMediaList([id],flag)
+        let mediaData = await fetchFromTMDB(`https://api.themoviedb.org/3/${flag}/${id}?language=en-US`)
 
       if (type === "recent") {
     // Remove if it already exists
@@ -401,7 +402,7 @@ export const addToList = CatchAsyncError(async (req, res, next) => {
         return res.status(200).json({
             success: true,
             message: `Successfully added into ${type}s`,
-            data:mediaData[0],
+            data:mediaData,
            
             
         });
