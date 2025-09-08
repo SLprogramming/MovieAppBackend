@@ -22,16 +22,11 @@ movieRouter.get('/content/get-cast/:id',getCast)
 
 movieRouter.get('/content/get-similar/:id',getSimilar)
 
-movieRouter.get('/content/get/favorite/movie',isAuthenticated,getUserMediaList('favoritesMovies'))
+movieRouter.get('/content/get/favorite',isAuthenticated,getUserMediaList('favorite'))
 
-movieRouter.get('/content/get/favorite/tv',isAuthenticated,getUserMediaList('favoritesTV'))
+movieRouter.get('/content/get/bookmark',isAuthenticated,getUserMediaList('bookmark'))
 
-movieRouter.get('/content/get/bookmark/movie',isAuthenticated,getUserMediaList('bookmarksMovies'))
+movieRouter.get('/content/get/recent',isAuthenticated,getUserMediaList('recent'))
 
-movieRouter.get('/content/get/bookmark/tv',isAuthenticated,getUserMediaList('bookmarksTV'))
-
-movieRouter.get('/content/get/recent/tv',isAuthenticated,getUserMediaList('recentTV'))
-
-movieRouter.get('/content/get/recent/movie',isAuthenticated,getUserMediaList('recentMovies'))
 
 export default movieRouter;

@@ -24,7 +24,7 @@ app.use(cookieParser())
 const allowedOrigins = [
   "https://movie-app-website-mu.vercel.app",
   "http://192.168.110.125:5173",
-  "http://192.168.110.125:5174"
+  "http://192.168.110.131:5174"
 ];
 
 app.use(cors({

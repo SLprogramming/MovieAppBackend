@@ -48,13 +48,13 @@ export const registrationUser = CatchAsyncError(async (req, res, next) => {
     let expireDate = Date.now() + (5 * 60 * 1000)
 
     try {
-    //   await sendMail({
-    //     // email: user.email,
-    //     email:'joesat2516@gmail.com',
-    //     subject: "Activate your account",
-    //     template: "activation-mail.ejs",
-    //     data,
-    //   });
+      await sendMail({
+        // email: user.email,
+        email:'joesat2516@gmail.com',
+        subject: "Activate your account",
+        template: "activation-mail.ejs",
+        data,
+      });
       res.status(201).json({
         success: true,
         message: `Please check your email: ${user.email} to activate your account!`,
@@ -345,121 +345,105 @@ export const activatePremium = CatchAsyncError(async (req,res,next) => {
 
 // to add bookmarks and favorite 
 export const addToList = CatchAsyncError(async (req, res, next) => {
-    try {
-        const { type, flag, id } = req.body; 
-        // type: "favorite" or "bookmark"
-        // flag: "movie" or "tv"
-        
-        const userId = req.user?._id;
-        if (!id) return next(new ErrorHandler("Movie or series ID is required!", 400));
-        if (!["favorite", "bookmark","recent"].includes(type)) return next(new ErrorHandler("Invalid type!", 400));
-        if (!["movie", "tv"].includes(flag)) return next(new ErrorHandler("Invalid flag!", 400));
-
-        const user = await userModel.findById(userId);
-        if (!user) return next(new ErrorHandler("User not found!", 404));
-
-        // Map keys dynamically
-        const keyMap = {
-            favorite: {
-                movie: "favoritesMovies",
-                tv: "favoritesTV"
-            },
-            bookmark: {
-                movie: "bookmarksMovies",
-                tv: "bookmarksTV"
-            },
-            recent: {
-                movie: "recentMovies",
-                tv: "recentTV"
-            }
-        };
-
-        const arrayKey = keyMap[type][flag];
-
-        if (user[arrayKey].includes(id.toString()) && type !='recent') {
-            return next(new ErrorHandler(`This ${flag} is already in ${type}s`, 400));
-        }
-        let mediaData = await fetchFromTMDB(`https://api.themoviedb.org/3/${flag}/${id}?language=en-US`)
-
-      if (type === "recent") {
-    // Remove if it already exists
-    user[arrayKey] = user[arrayKey].filter(item => item.toString() !== id.toString());
-
-    // Add new one at the end
-    user[arrayKey].push(id.toString());
-
-    // Keep only last 20
-    if (user[arrayKey].length > 20) {
-        user[arrayKey] = user[arrayKey].slice(-20);
-    }
-}else{
-
-    user[arrayKey].push(id.toString());
-}
-
-        await user.save();
-
-        return res.status(200).json({
-            success: true,
-            message: `Successfully added into ${type}s`,
-            data:mediaData,
-           
-            
-        });
-
-    } catch (error) {
-        return next(new ErrorHandler(error.message, 400));
-    }
-});
-
-// to remove bookmarks and favorite
-export const removeFromList = CatchAsyncError(async (req, res, next) => {
   try {
     const { type, flag, id } = req.body; 
-    // type: "favorite" or "bookmark"
-    // flag: "movie" or "tv"
+    // type: "favorite" | "bookmark" | "recent"
+    // flag: "movie" | "tv"
 
     const userId = req.user?._id;
     if (!id) return next(new ErrorHandler("Movie or series ID is required!", 400));
-    if (!["favorite", "bookmark"].includes(type)) return next(new ErrorHandler("Invalid type!", 400));
+    if (!["favorite", "bookmark", "recent"].includes(type)) return next(new ErrorHandler("Invalid type!", 400));
     if (!["movie", "tv"].includes(flag)) return next(new ErrorHandler("Invalid flag!", 400));
 
     const user = await userModel.findById(userId);
     if (!user) return next(new ErrorHandler("User not found!", 404));
 
-    // Map keys dynamically
-    const keyMap = {
-      favorite: {
-        movie: "favoritesMovies",
-        tv: "favoritesTV"
-      },
-      bookmark: {
-        movie: "bookmarksMovies",
-        tv: "bookmarksTV"
+    const arrayKey = type; // matches schema key
+    const existingIndex = user[arrayKey].findIndex(item => item.id === Number(id) && item.type === flag);
+
+    // --- Recents (special handling: reorder & limit) ---
+    if (type === "recent") {
+      if (existingIndex !== -1) {
+        // remove if already exists
+        user[arrayKey].splice(existingIndex, 1);
       }
-    };
 
-    const arrayKey = keyMap[type][flag];
+      // add new entry at the end
+      user[arrayKey].push({ type: flag, id: Number(id) });
 
-    if (!user[arrayKey].includes(id)) {
-      return next(new ErrorHandler(`This ${flag} is not in your ${type}s`, 400));
+      // limit last 20
+      if (user[arrayKey].length > 20) {
+        user[arrayKey] = user[arrayKey].slice(-20);
+      }
+    } else {
+      // --- Favorites / Bookmarks ---
+      if (existingIndex !== -1) {
+        return next(new ErrorHandler(`This ${flag} is already in ${type}`, 400));
+      }
+
+      user[arrayKey].push({ type: flag, id: Number(id) });
     }
 
-    // Remove ID
-    user[arrayKey] = user[arrayKey].filter(item => item.toString() !== id.toString());
+    // fetch TMDB data for response
+    const mediaData = await fetchFromTMDB(
+      `https://api.themoviedb.org/3/${flag}/${id}?language=en-US`
+    );
 
     await user.save();
 
     return res.status(200).json({
       success: true,
-      message: `Successfully removed from ${type}s`,
-
+      message: `Successfully added into ${type}`,
+      data: mediaData,
     });
 
   } catch (error) {
     return next(new ErrorHandler(error.message, 400));
   }
 });
+
+
+// to remove bookmarks and favorite
+export const removeFromList = CatchAsyncError(async (req, res, next) => {
+  try {
+    const { type, flag, id } = req.body; 
+    // type: "favorite" | "bookmark"
+    // flag: "movie" | "tv"
+
+    const userId = req.user?._id;
+    if (!id) return next(new ErrorHandler("Movie or series ID is required!", 400));
+    if (!["favorite", "bookmark","recent"].includes(type)) return next(new ErrorHandler("Invalid type!", 400));
+    if (!["movie", "tv"].includes(flag)) return next(new ErrorHandler("Invalid flag!", 400));
+
+    const user = await userModel.findById(userId);
+    if (!user) return next(new ErrorHandler("User not found!", 404));
+
+    const arrayKey = type; // matches schema field
+
+    // find item
+    const existingIndex = user[arrayKey].findIndex(
+      item => item.id === Number(id) && item.type === flag
+    );
+
+    if (existingIndex === -1) {
+      return next(new ErrorHandler(`This ${flag} is not in your ${type}`, 400));
+    }
+
+    // remove it
+    user[arrayKey].splice(existingIndex, 1);
+
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: `Successfully removed from ${type}`,
+    });
+
+  } catch (error) {
+    return next(new ErrorHandler(error.message, 400));
+  }
+});
+
 
 
 export const getPremiumUser = CatchAsyncError(async (req, res, next) => {

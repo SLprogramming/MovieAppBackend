@@ -44,30 +44,56 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
-  bookmarksMovies: {
-    type: [String], 
+  bookmark: {
+    type: [
+      {
+        type: {
+          type: String,
+          enum: ["movie", "tv"],
+          required: true,
+        },
+        id: {
+          type: Number,
+          required: true,
+        },
+      },
+    ],
     default: [],
   },
-  favoritesMovies: {
-    type: [String],
+  favorite: {
+     type: [
+      {
+        type: {
+          type: String,
+          enum: ["movie", "tv"],
+          required: true,
+        },
+        id: {
+          type: Number,
+          required: true,
+        },
+      },
+    ],
     default: [],
   },
-  bookmarksTV: {
-    type: [String], 
+
+  recent: {
+ type: [
+      {
+        type: {
+          type: String,
+          enum: ["movie", "tv"],
+          required: true,
+        },
+        id: {
+          type: Number,
+          required: true,
+        },
+      },
+    ],
     default: [],
   },
-  recentMovies: {
-    type: [String],
-    default: [],
-  },
-  recentTV: {
-    type: [String], 
-    default: [],
-  },
-  favoritesTV: {
-    type: [String],
-    default: [],
-  }
+
 
 },{timestamps:true});
 

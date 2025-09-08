@@ -109,27 +109,16 @@ export const getUserMediaList = (listType) => CatchAsyncError(async (req, res, n
       return next(new ErrorHandler("JWT error", 401));
     }
 
-    // Map the listType to the corresponding array in the user schema
-    const listMap = {
-      favoritesMovies: req.user?.favoritesMovies,
-      favoritesTV: req.user?.favoritesTV,
-      bookmarksMovies: req.user?.bookmarksMovies,
-      bookmarksTV: req.user?.bookmarksTV,
-      recentTV: req.user?.recentTV,
-      recentMovies: req.user?.recentMovies
-    };
-
-    const mediaIds = listMap[listType] || [];
+    const mediaIds = req.user[listType] || [];
 
     if (mediaIds.length === 0) {
       return res.status(200).json({ success: true, count: 0, data: [] });
     }
 
     // Detect whether this list is movies or tv
-    const contentType = listType.toLowerCase().includes("tv") ? "tv" : "movie";
-
-    const requests = mediaIds.map((id) =>
-      fetchFromTMDB(`https://api.themoviedb.org/3/${contentType}/${id}?language=en-US`)
+    
+    const requests = mediaIds.map(({type,id}) =>
+      fetchFromTMDB(`https://api.themoviedb.org/3/${type}/${id}?language=en-US`)
         .catch(() => null) // skip failed requests
     );
 
