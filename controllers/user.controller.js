@@ -19,7 +19,7 @@ dotEnv.config();
 
 //register user
 export const registrationUser = CatchAsyncError(async (req, res, next) => {
-    console.log(req.body)
+
   try {
     const { name, email, password } = req.body;
     const isEmailExist = await userModel.findOne({ email });
@@ -179,7 +179,7 @@ export const updateAccessToken = CatchAsyncError(async (req,res,next) =>{
         if(!session) {
             return next(new ErrorHandler(message,400)) 
         }
-        console.log(session)
+      
         const user =  session
 
         const accessToken = jwt.sign({id:user._id},process.env.ACCESS_TOKEN,{

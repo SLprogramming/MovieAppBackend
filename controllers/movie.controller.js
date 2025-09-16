@@ -20,12 +20,11 @@ export const getTrendingMovies = CatchAsyncError(async (req, res) => {
 
 export const searchMoviesByName = CatchAsyncError(async (req, res, next) => {
   try {
-    console.log(req.params.page, req.query.keyword);
+    
     let response = await fetchFromTMDB(
       `https://api.themoviedb.org/3/search/multi?query=${req.query.keyword}&include_adult=false&language=en-US&page=${req.params.page}`
     );
-    console.log("hello");
-    console.log(response);
+    
     return res.status(200).json({
       success: true,
       count: response.results.length,

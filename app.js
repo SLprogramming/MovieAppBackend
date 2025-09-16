@@ -9,12 +9,14 @@ import planRouter from "./routes/plan.route.js"
 import purchaseRequestRouter from "./routes/purchaseRequest.route.js"
 import paymentTypeRouter from "./routes/paymentType.route.js"
 import bankAccountRouter from "./routes/bankAccount.route.js"
+import { getIO } from "./utils/socket.js"
 
-
-export const app = express()
 
 dotEnv.config()
 
+
+
+export const app = express()
 //body parser
 app.use(express.json({limit:"50mb"}))
 
@@ -23,7 +25,7 @@ app.use(cookieParser())
 
 const allowedOrigins = [
   "https://movie-app-website-mu.vercel.app",
-  "http://192.168.110.125:5173",
+  "http://192.168.110.131:5173",
   "http://192.168.110.131:5174"
 ];
 
@@ -57,6 +59,9 @@ app.use("/api/bankAccount",bankAccountRouter)
 
 //api
 app.get("/api/test",(req,res,next) => {
+  const io = getIO();
+  io.to('user_689ec67da2def8a8560a50e2').emit('purchaseRequest:created','hello')
+  io.to('admins').emit('purchaseRequest:created','hello')
     res.status(200).json({
         success:true,
         message:"api is working"

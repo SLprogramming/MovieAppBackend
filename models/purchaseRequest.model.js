@@ -51,7 +51,7 @@ purchaseRequestSchema.methods.changeStatus =async function(newStatus) {
 
         this.status = newStatus
         let saveRequest = await this.save()
-        await saveRequest.populate("user_id").populate("plan_id")
+       
         return saveRequest
         
     } catch (error) {
