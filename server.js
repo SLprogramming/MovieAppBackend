@@ -13,7 +13,7 @@ initSocket(server);
 
 //create server
 
-app.listen(process.env.PORT,() => {
+server.listen(process.env.PORT,() => {
     console.log(`server is running on http://localhost:${process.env.PORT}`)
     connectDB()
 })
