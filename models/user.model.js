@@ -93,6 +93,13 @@ const userSchema = new mongoose.Schema({
     ],
     default: [],
   },
+   sessions: [
+    {
+      device: { type: String },   // e.g. "Chrome on Windows"
+      token: { type: String },    // refresh token
+      createdAt: { type: Date, default: Date.now }
+    }
+  ],
 
 
 },{timestamps:true});
@@ -145,5 +152,35 @@ userSchema.methods.activatePremium = async function(days) {
 
   return this.save();
 }
+// Add new session (limit devices)
+userSchema.methods.addSession = async function(token, device = "Unknown") {
+  const MAX_SESSIONS = 2; // limit to 2 devices (you can change this)
+
+  // If already at max, remove the oldest
+  if (this.sessions.length >= MAX_SESSIONS) {
+    this.sessions.shift();
+  }
+
+  this.sessions.push({ device, token });
+  await this.save();
+};
+
+// Validate if refresh token belongs to user
+userSchema.methods.isValidSession = function(token) {
+  return this.sessions.some(session => session.token === token);
+};
+
+// Remove a single session (logout from one device)
+userSchema.methods.removeSession = async function(token) {
+  this.sessions = this.sessions.filter(session => session.token !== token);
+  await this.save();
+};
+
+// Clear all sessions (logout from everywhere)
+userSchema.methods.clearSessions = async function() {
+  this.sessions = [];
+  await this.save();
+};
+
 const userModel = mongoose.model("User", userSchema);
 export default userModel
