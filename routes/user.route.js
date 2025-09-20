@@ -1,5 +1,5 @@
 import express from "express"
-import { activatePremium, activateUser, addToList, getAllUsers, getPremiumUser, getUserInfo, loginUser, logoutUser, promoteAdmin, registrationUser, removeFromList, socialAuth, updateAccessToken, updatePassword, updateUser } from "../controllers/user.controller.js"
+import { activatePremium, activateUser, addToList, getAllUsers, getPremiumUser, getUserInfo, loginUser, logoutUser, promoteAdmin, registrationUser, removeFromList, removeSessionById, socialAuth, updateAccessToken, updatePassword, updateUser } from "../controllers/user.controller.js"
 import {  authorizeRoles, isAuthenticated } from "../middleware/auth.js"
 
 const userRouter = express.Router()
@@ -27,6 +27,8 @@ userRouter.put('/auth/extend-premium',isAuthenticated,authorizeRoles('superAdmin
 userRouter.put('/user/add-bookmarks-favorate',isAuthenticated,addToList)
 
 userRouter.put('/user/remove-bookmarks-favorate',isAuthenticated,removeFromList)
+
+userRouter.post('/user/remove/session',isAuthenticated,removeSessionById)
 
 userRouter.get('/user/get-premium-user',isAuthenticated,authorizeRoles('superAdmin','admin'),getPremiumUser)
 

@@ -152,20 +152,23 @@ userSchema.methods.activatePremium = async function(days) {
 
   return this.save();
 }
-// Add new session (limit devices)
-userSchema.methods.addSession = async function(token, device = "Unknown") {
-  const MAX_SESSIONS = 2; // limit to 2 devices (you can change this)
 
-  // If already at max, remove the oldest
+userSchema.methods.addSession = async function(token, device = "Unknown") {
+  const MAX_SESSIONS = 2;
+
   if (this.sessions.length >= MAX_SESSIONS) {
-    this.sessions.shift();
+    // block new login
+    return false;
   }
 
   this.sessions.push({ device, token });
   await this.save();
+  return true;
 };
 
-// Validate if refresh token belongs to user
+
+
+// check if refresh token exists in sessions
 userSchema.methods.isValidSession = function(token) {
   return this.sessions.some(session => session.token === token);
 };

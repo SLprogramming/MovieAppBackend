@@ -119,104 +119,186 @@ export const activateUser = CatchAsyncError(async (req,res,next) => {
 })
 
 
+
 //login user
 export const loginUser = CatchAsyncError(async (req,res,next) => {
-    try {
-        const {email,password} = req.body
-        if(!email || !password) {
-            return next(new ErrorHandler("Please enter email and password",400))
-        }
-        const user = await userModel.findOne({email}).select("+password")
-
-        if(!user) {
-            return next(new ErrorHandler("Invalid email or password"))
-        }
-
-        const isPasswordMatch = await user.comparePassword(password)
-
-        if(!isPasswordMatch) {
-            return next(new ErrorHandler("Invalid email or password"))
-        }
-
-        sendToken(user,200,res)
-        
-    } catch (error) {
-        return next(new ErrorHandler(error.message,400))
+  try {
+    const {email,password} = req.body
+    if(!email || !password) {
+      return next(new ErrorHandler("Please enter email and password",400))
     }
+
+    const user = await userModel.findOne({email}).select("+password")
+    if(!user) {
+      return next(new ErrorHandler("Invalid email or password"))
+    }
+
+    const isPasswordMatch = await user.comparePassword(password)
+    if(!isPasswordMatch) {
+      return next(new ErrorHandler("Invalid email or password"))
+    }
+
+    // create tokens
+    const accessToken = user.SignAccessToken()
+    const refreshToken = user.SignRefreshToken()
+
+    // try to add session
+    const allowed = await user.addSession(refreshToken, req.headers['user-agent'] || "Unknown")
+
+    if (!allowed) {
+      return next(new ErrorHandler("Login limit reached. Please logout from another device.", 406))
+    }
+
+    // send cookies + tokens
+    res.cookie("access_token", accessToken, accessTokenOptions)
+    res.cookie("refresh_token", refreshToken, refreshTokenOptions)
+
+    res.status(200).json({
+      success: true,
+      accessToken,
+      refreshToken,
+      user
+    })
+  } catch (error) {
+    return next(new ErrorHandler(error.message,400))
+  }
 })
+
 
 
 //logout user
 export const logoutUser = CatchAsyncError(async (req,res,next) => {
-    try {
-        res.cookie("access_token","",{maxAge:1})
-        res.cookie("refresh_token","",{maxAge:1})
-        // redis.del(req.user._id || "")
-        res.status(200).json({
-            success:true,
-            message:"Logged out successfully!"
-        })
-    } catch (error) {
-        return next(new ErrorHandler(error.message,400))
+  try {
+    const refresh_token = req.cookies.refresh_token
+    if (req.user && refresh_token) {
+      await req.user.removeSession(refresh_token)
     }
+
+    res.cookie("access_token","",{maxAge:1})
+    res.cookie("refresh_token","",{maxAge:1})
+
+    res.status(200).json({
+      success:true,
+      message:"Logged out successfully!"
+    })
+  } catch (error) {
+    return next(new ErrorHandler(error.message,400))
+  }
 })
+
+//remove session by id
+export const removeSessionById = CatchAsyncError(async (req, res, next) => {
+  try {
+    const { sessionId } = req.body;
+    const userId = req.user?._id;
+
+    if (!sessionId) {
+      return next(new ErrorHandler("Session ID is required", 400));
+    }
+
+    const user = await userModel.findById(userId);
+    if (!user) {
+      return next(new ErrorHandler("User not found", 404));
+    }
+
+    const sessionIndex = user.sessions.findIndex(s => s._id.toString() === sessionId);
+    if (sessionIndex === -1) {
+      return next(new ErrorHandler("Session not found", 404));
+    }
+
+    user.sessions.splice(sessionIndex, 1);
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Session removed successfully"
+    });
+
+  } catch (error) {
+    return next(new ErrorHandler(error.message, 400));
+  }
+});
+
 
 
 //update access token
 export const updateAccessToken = CatchAsyncError(async (req,res,next) =>{
-    try {
-        const refresh_token = req.cookies.refresh_token
-        const decoded = jwt.verify(refresh_token,process.env.REFRESH_TOKEN)
-
-        const message = `Could not refresh token`
-        if(!decode) {
-            return next(new ErrorHandler(message,400))
-        }
-
-        // const session = await redis.get(decoded.id)
-        const session = await userModel.findById(decoded.id)
-
-        if(!session) {
-            return next(new ErrorHandler(message,400)) 
-        }
-      
-        const user =  session
-
-        const accessToken = jwt.sign({id:user._id},process.env.ACCESS_TOKEN,{
-            expiresIn:"5m"
-        })
-
-        const refreshToken = jwt.sign({id:user._id},process.env.REFRESH_TOKEN,{
-            expiresIn:"3d"
-        })
-
-        req.user = user
-
-        res.cookie("access_token",accessToken,accessTokenOptions)
-        res.cookie("refresh_token",refreshToken,refreshTokenOptions)
-
-        res.status(200).json({
-            status:'success',
-            accessToken
-        })
-
-    } catch (error) {
-        return next(new ErrorHandler(error.message,400))
+  try {
+    const refresh_token = req.cookies.refresh_token
+    if (!refresh_token) {
+      return next(new ErrorHandler("No refresh token provided",400))
     }
+
+    let decoded
+    try {
+      decoded = jwt.verify(refresh_token,process.env.REFRESH_TOKEN)
+    } catch (err) {
+      return next(new ErrorHandler("Invalid refresh token",401))
+    }
+
+    const user = await userModel.findById(decoded.id)
+    if(!user) {
+      return next(new ErrorHandler("User not found",404)) 
+    }
+
+    // 🔥 Check if refresh token is valid for this user
+   if (!user.isValidSession(refresh_token)) {
+  return next(new ErrorHandler("Session expired or invalid", 403));
+}
+
+
+    // issue new tokens
+    const accessToken = user.SignAccessToken()
+    const newRefreshToken = user.SignRefreshToken()
+
+    // replace old refresh token with new one
+    await user.removeSession(refresh_token)
+    await user.addSession(newRefreshToken, req.headers['user-agent'] || "Unknown")
+
+    // send new cookies
+    res.cookie("access_token",accessToken,accessTokenOptions)
+    res.cookie("refresh_token",newRefreshToken,refreshTokenOptions)
+
+    res.status(200).json({
+      success:true,
+      accessToken
+    })
+
+  } catch (error) {
+    return next(new ErrorHandler(error.message,400))
+  }
 })
+
 
 
 ///get user info
-export const getUserInfo = CatchAsyncError(async (req,res,next) => {
-    try {
-        // console.log(req.params.id)
-        const userId = req.user?._id
-        getUserById(userId,res)
-        
-    } catch (error) {
-        return next(new ErrorHandler(error.message,400))
+export const getUserInfo = CatchAsyncError(async (req, res, next) => {
+  try {
+    const userId = req.user?._id;
+    const refresh_token = req.cookies.refresh_token;
+
+    if (!refresh_token) {
+      return next(new ErrorHandler("No refresh token provided", 401));
     }
-})
+
+    const user = await userModel.findById(userId);
+    if (!user) {
+      return next(new ErrorHandler("User not found", 404));
+    }
+
+    // 🔥 Check if session (refresh token) is valid
+    if (!user.isValidSession(refresh_token)) {
+      return next(new ErrorHandler("Session expired or blocked. Please login again.", 401));
+    }
+
+    // session is valid → return user info
+    getUserById(userId, res);
+
+  } catch (error) {
+    return next(new ErrorHandler(error.message, 400));
+  }
+});
+
 
 
 //social authh
