@@ -13,17 +13,17 @@ dotEnv.config()
        expires:new Date(Date.now() + accessTokenExpire * 60 * 60 * 1000),
        maxAge:accessTokenExpire * 60 * 60 *  1000,
        httpOnly:true,
-       sameSite:'lax',
+       sameSite:'none',
        path: '/',
-       secure:false,
+       secure:true,
    }
   export const refreshTokenOptions = {
        expires:new Date(Date.now() + refreshTokenExpire * 24 * 60 * 60 * 1000),
        maxAge:refreshTokenExpire * 24 * 60 * 60 * 1000,
        httpOnly:true,
        path: '/',
-       sameSite:'lax',  // lax for dev , none for deploy
-       secure:false,  // secure true for deploy
+       sameSite:'none',  // lax for dev , none for deploy
+       secure:true,  // secure true for deploy
    }
 
 export const sendToken = (user,statusCode,res) => {
