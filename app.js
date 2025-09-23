@@ -60,7 +60,7 @@ app.use("/api/bankAccount",bankAccountRouter)
 //api
 app.get("/api/test",(req,res,next) => {
   const io = getIO();
-  io.to('user_689ec67da2def8a8560a50e2').emit('purchaseRequest:created','hello')
+  
   io.to('admins').emit('purchaseRequest:created','hello')
     res.status(200).json({
         success:true,

@@ -118,7 +118,7 @@ export const changePurchaseRequestStatus = CatchAsyncError(async (req, res, next
         let data = await request.changeStatus(status)
          const io = getIO();
         if(data){
-            io.to(`user_${data.user_id}`).emit("purchaseRequest:change", 'inquiry');
+            io.to(`user_${data.user_id}`).emit("overAll:change", 'inquiry');
         }
         return res.status(200).json({success:true,data})
     } catch (error) {

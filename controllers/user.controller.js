@@ -14,6 +14,7 @@ import { decode } from "punycode";
 import { getUserById } from "../services/user.service.js";
 import { getUserMediaList } from "./movie.controller.js";
 import { fetchFromTMDB } from "../services/tmdb.service.js";
+import { getIO } from "../utils/socket.js";
 
 dotEnv.config();
 
@@ -21,17 +22,23 @@ dotEnv.config();
 export const registrationUser = CatchAsyncError(async (req, res, next) => {
 
   try {
+    const emailRegexPattern = /^[\w.-]+@[\w.-]+\.\w+$/;
     const { name, email, password } = req.body;
     const isEmailExist = await userModel.findOne({ email });
+    if (!email || !emailRegexPattern.test(email)) {
+  return res.status(400).json({success:false,error:{email:'Invalid email format!'}})
+}
     if (isEmailExist) {
-      return next(new ErrorHandler("Email is already exist", 400));
+            return res.status(400).json({success:false,error:{email:'Email already exist!'}})
     }
 
     const user = { name, email, password };
 
-
+    if (!name ) {
+          return res.status(400).json({success:false,error:{name:'User Name is required!'}})
+}
     if (commonPasswords.common_passwords.includes(password)) {
-        return next(new ErrorHandler("Password is too common", 400));
+             return res.status(400).json({success:false,error:{password:'Password is too common'}})
       }
   
     const activationToken = createActivationToken(user);
@@ -123,6 +130,7 @@ export const activateUser = CatchAsyncError(async (req,res,next) => {
 //login user
 export const loginUser = CatchAsyncError(async (req,res,next) => {
   try {
+      const io = getIO();
     const {email,password} = req.body
     if(!email || !password) {
       return next(new ErrorHandler("Please enter email and password",400))
@@ -130,18 +138,18 @@ export const loginUser = CatchAsyncError(async (req,res,next) => {
 
     const user = await userModel.findOne({email}).select("+password")
     if(!user) {
-      return next(new ErrorHandler("Invalid email or password"))
+      return res.status(400).json({success:false,error:{email:'Invalid Email'}})
     }
-
+    
     const isPasswordMatch = await user.comparePassword(password)
     if(!isPasswordMatch) {
-      return next(new ErrorHandler("Invalid email or password"))
+       return res.status(400).json({success:false,error:{password:'Incorrect Password'}})
     }
 
     // create tokens
     const accessToken = user.SignAccessToken()
     const refreshToken = user.SignRefreshToken()
-
+io.to(`user_${user._id}`).emit("overAll:change", 'fetchMe');
     // try to add session
     const allowed = await user.addSession(refreshToken, req.headers['user-agent'] || "Unknown")
 
@@ -169,6 +177,7 @@ export const loginUser = CatchAsyncError(async (req,res,next) => {
 //logout user
 export const logoutUser = CatchAsyncError(async (req,res,next) => {
   try {
+       const io = getIO();
     const refresh_token = req.cookies.refresh_token
     if (req.user && refresh_token) {
       await req.user.removeSession(refresh_token)
@@ -176,7 +185,7 @@ export const logoutUser = CatchAsyncError(async (req,res,next) => {
 
     res.cookie("access_token","",{maxAge:1})
     res.cookie("refresh_token","",{maxAge:1})
-
+   io.to(`user_${req.user?._id}`).emit("overAll:change", 'fetchMe');
     res.status(200).json({
       success:true,
       message:"Logged out successfully!"
@@ -189,6 +198,7 @@ export const logoutUser = CatchAsyncError(async (req,res,next) => {
 //remove session by id
 export const removeSessionById = CatchAsyncError(async (req, res, next) => {
   try {
+      const io = getIO();
     const { sessionId } = req.body;
     const userId = req.user?._id;
 
@@ -208,6 +218,7 @@ export const removeSessionById = CatchAsyncError(async (req, res, next) => {
 
     user.sessions.splice(sessionIndex, 1);
     await user.save();
+   io.to(`user_${user?._id}`).emit("overAll:change", 'fetchMe');
 
     res.status(200).json({
       success: true,

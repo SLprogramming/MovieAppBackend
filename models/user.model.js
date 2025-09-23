@@ -2,6 +2,8 @@ import mongoose from "mongoose"
 import bcrypt from "bcryptjs"
 import dotEnv from "dotenv"
 import jwt from "jsonwebtoken"
+
+import { v4 as uuidv4 } from "uuid";
 dotEnv.config()
 
 const emailRegexPattern = /^[\w\.-]+@[\w\.-]+\.\w+$/;
@@ -118,20 +120,29 @@ userSchema.methods.comparePassword = async function (password) {
   return await bcrypt.compare(password, this.password);
 };
 
-//sign access token
-userSchema.methods.SignAccessToken =  function () {
-    return jwt.sign({id:this.id},process.env.ACCESS_TOKEN || "",{
-        expiresIn:"5m"
-    })
-}
+// sign access token
+userSchema.methods.SignAccessToken = function () {
+  return jwt.sign(
+    {
+      id: this._id,
+      jti: uuidv4(), // unique for each token
+    },
+    process.env.ACCESS_TOKEN || "",
+    { expiresIn: "5m" }
+  );
+};
 
-//sign refresh token
-userSchema.methods.SignRefreshToken =  function () {
-    return jwt.sign({id:this._id},process.env.REFRESH_TOKEN || "",{
-        expiresIn:"3d"
-    })
-}
-
+// sign refresh token
+userSchema.methods.SignRefreshToken = function () {
+  return jwt.sign(
+    {
+      id: this._id,
+      jti: uuidv4(), // unique per session
+    },
+    process.env.REFRESH_TOKEN || "",
+    { expiresIn: "3d" }
+  );
+};
 //check premium
 userSchema.methods.isPremiumActive = function() {
   if (!this.premiumExpire) return false;
@@ -163,6 +174,7 @@ userSchema.methods.addSession = async function(token, device = "Unknown") {
 
   this.sessions.push({ device, token });
   await this.save();
+
   return true;
 };
 
@@ -175,8 +187,12 @@ userSchema.methods.isValidSession = function(token) {
 
 // Remove a single session (logout from one device)
 userSchema.methods.removeSession = async function(token) {
+  
   this.sessions = this.sessions.filter(session => session.token !== token);
-  await this.save();
+   await this.save();
+  
+
+  
 };
 
 // Clear all sessions (logout from everywhere)
