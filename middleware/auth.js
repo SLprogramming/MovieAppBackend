@@ -10,34 +10,47 @@ dotEnv.config();
 export const isAuthenticated = CatchAsyncError(async (req, res, next) => {
   try {
     const access_token = req.cookies.access_token;
-  
+    const refresh_token = req.cookies.refresh_token;
+
     if (!access_token) {
-      return next(
-        new ErrorHandler("Please Login To Access This Resources", 401)
-      );
+      return next(new ErrorHandler("Please login to access this resource", 401));
     }
 
+    // Verify access token
     const decoded = jwt.verify(access_token, process.env.ACCESS_TOKEN);
     if (!decoded) {
-      return next(new ErrorHandler("access token is not valid", 400));
+      return next(new ErrorHandler("Access token is not valid", 400));
     }
-   
 
-    // const user = await redis.get(decoded.id)
+    // Get user from DB
     const user = await userModel.findById(decoded.id);
-
     if (!user) {
-      return next(new ErrorHandler("user not found", 400));
+      return next(new ErrorHandler("User not found", 404));
     }
-    
+
+    // 🔥 Ensure the session is still valid
+    const sessionValid = user.sessions.some(
+      (s) => s.token === refresh_token // or compare against refresh_token if you use that for session tracking
+    );
+
+    if (!sessionValid) {
+      return next(new ErrorHandler("Session expired or blocked", 409));
+    }
+
+    // Attach user to request
     req.user = user;
 
     next();
   } catch (error) {
- 
-    return next(new ErrorHandler(error.message,error.message == "jwt expired"? 401 : 500))
+    return next(
+      new ErrorHandler(
+        error.message,
+        error.message === "jwt expired" ? 401 : 500
+      )
+    );
   }
 });
+
 
 //validate user role
 export const authorizeRoles = (...roles) => {

@@ -125,6 +125,81 @@ export const activateUser = CatchAsyncError(async (req,res,next) => {
     }
 })
 
+// forgot password
+export const forgotPassword = CatchAsyncError(async (req, res, next) => {
+  try {
+    const { email } = req.body;
+
+    // 1. Check if user exists
+    const user = await userModel.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ success: false, error: { email: "User not found!" } });
+    }
+
+    // 2. Create reset token (JWT or random string)
+    const resetToken = jwt.sign(
+      { id: user._id },
+      process.env.RESET_PASSWORD_SECRET,
+      { expiresIn: "15m" } // reset token valid for 15 minutes
+    );
+
+    const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
+
+    // 3. Send reset email
+    const data = { user: { name: user.name }, resetUrl };
+    await sendMail({
+      email: user.email,
+      subject: "Reset your password",
+      template: "reset-password.ejs",
+      data,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `Password reset link sent to ${user.email}`,
+    });
+  } catch (error) {
+    return next(new ErrorHandler(error.message, 400));
+  }
+});
+
+// reset password
+export const resetPassword = CatchAsyncError(async (req, res, next) => {
+  try {
+    const { token } = req.params;
+    const { password } = req.body;
+    
+    // 1. Verify token
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.RESET_PASSWORD_SECRET);
+    } catch (err) {
+      return res.status(400).json({ success: false, error: { token: "Invalid or expired token!" } });
+    }
+
+    // 2. Find user
+    const user = await userModel.findById(decoded.id);
+    if (!user) {
+      return res.status(404).json({ success: false, error: { user: "User not found!" } });
+    }
+
+    // 3. Check common password (optional like in registration)
+    if (commonPasswords.common_passwords.includes(password)) {
+      return res.status(400).json({ success: false, error: { password: "Password is too common" } });
+    }
+
+    // 4. Update password
+    user.password = password; // assume your schema pre-save hashes it
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Password has been reset successfully!",
+    });
+  } catch (error) {
+    return next(new ErrorHandler(error.message, 400));
+  }
+});
 
 
 //login user
@@ -382,8 +457,13 @@ export const updatePassword = CatchAsyncError(async (req,res,next) => {
         const isPasswordMatch = await user?.comparePassword(oldPassword)
        
         if(!isPasswordMatch){
-            return next(new ErrorHandler('Invalid old password!',400))
+            // return next(new ErrorHandler('Invalid old password!',400))
+            return res.status(200).json({success:false,data:{oldPassword:'old password is incorrect'}})
         }
+        if (commonPasswords.common_passwords.includes(newPassword)) {
+             return res.status(200).json({success:false,data:{newPassword:'Password is too common'}})
+      }
+
 
         user.password = newPassword
 
