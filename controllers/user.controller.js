@@ -128,14 +128,17 @@ export const activateUser = CatchAsyncError(async (req,res,next) => {
 // forgot password
 export const forgotPassword = CatchAsyncError(async (req, res, next) => {
   try {
+       const emailRegexPattern = /^[\w.-]+@[\w.-]+\.\w+$/;
     const { email } = req.body;
 
     // 1. Check if user exists
     const user = await userModel.findOne({ email });
-    if (!user) {
-      return res.status(404).json({ success: false, error: { email: "User not found!" } });
+    if (!email || !emailRegexPattern.test(email)) {
+      return res.status(260).json({success:false,error:{email:'Invalid email format!'}})
     }
-
+    if (!user) {
+      return res.status(260).json({ success: false, error: { email: "User not found!" } });
+    }
     // 2. Create reset token (JWT or random string)
     const resetToken = jwt.sign(
       { id: user._id },
@@ -174,13 +177,13 @@ export const resetPassword = CatchAsyncError(async (req, res, next) => {
     try {
       decoded = jwt.verify(token, process.env.RESET_PASSWORD_SECRET);
     } catch (err) {
-      return res.status(400).json({ success: false, error: { token: "Invalid or expired token!" } });
+      return res.status(400).json({ success: false, message:'Token expired!' });
     }
 
     // 2. Find user
     const user = await userModel.findById(decoded.id);
     if (!user) {
-      return res.status(404).json({ success: false, error: { user: "User not found!" } });
+return res.status(400).json({ success: false, message:'User Not Found!' });
     }
 
     // 3. Check common password (optional like in registration)
