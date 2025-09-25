@@ -162,6 +162,7 @@ export const forgotPassword = CatchAsyncError(async (req, res, next) => {
       message: `Password reset link sent to ${user.email}`,
     });
   } catch (error) {
+    console.log(error)
     return next(new ErrorHandler(error.message, 400));
   }
 });
