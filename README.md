@@ -1,80 +1,87 @@
+
 # MovieApp Backend
 
-This is the backend for the Learning Management System (MovieApp) application. It is built using Node.js, Express, MongoDB, and Redis.
+A Node.js + Express backend powering the MovieApp frontend. Responsibilities include user authentication, media uploads (Cloudinary), email notifications, and payment/purchase management.
 
-## Table of Contents
+## Quick Start
 
-- [Installation](#installation)
-- [Configuration](#configuration)
-- [Usage](#usage)
-- [API Endpoints](#api-endpoints)
-- [License](#license)
+1. Install deps
+```sh
+npm install
 
-## Installation
+Create environment variables (see .env)
+Run (development)
 
-1. Clone the repository:
+node [server.js](http://_vscodecontentref_/0)
+# or `npm start` / `npm run dev` if configured
 
-    ```sh
-    git clone https://github.com/SLprogramming/MovieAppBackend.git
-    cd MovieAppBackend
-    ```
+Environment
+See .env. Key variables used in this workspace:
 
-2. Install the dependencies:
+ACCESS_TOKEN, ACCESS_TOKEN_EXPIRE
+REFRESH_TOKEN, REFRESH_TOKEN_EXPIRE
+ACTIVATION_SECRET, RESET_PASSWORD_SECRET
+DB_URL
+CLOUDINARY_* (Cloudinary credentials)
+SMTP_HOST, SMTP_MAIL, SMTP_PASSWORD, SMTP_PORT, SMTP_SERVICE
+PORT, NODE_ENV, CLIENT_URL
+Project Structure
+app.js — Express app setup
+server.js — Server bootstrap
+config/
+cloudinary.js
+db.js
+filePath.js
+multer.js
+redis.js
+controllers/
+user.controller.js
+movie.controller.js
+paymentType.controller.js
+premiumPlan.controller.js
+bankAccount.controller.js
+purchaseRequest.contrller.js
+middleware/
+auth.js — auth middleware (auth)
+catchAsyncError.js — (catchAsyncError)
+error.js — global error handler (error)
+models/
+bankAccount.model.js
+paymentType.model.js
+premiumPlan.model.js
+...other models in models/
+mails/
+activation-mail.ejs
+reset-password.ejs
+utils/
+jwt.js — cookie/token utilities:
+sendToken
+accessTokenOptions
+refreshTokenOptions
+Authentication & Tokens
+Tokens and cookie options are defined in utils/jwt.js. Use sendToken in controllers to set access_token and refresh_token cookies.
+Dev vs production cookie settings are present — in production ensure secure: true and sameSite: 'none'.
+Redis session persistence is referenced/commented in utils/jwt.js; configuration lives in config/redis.js.
+Uploads & Email
+Media uploads use Cloudinary configured in config/cloudinary.js.
+Email templates live in mails/ and SMTP is configured via the .env variables.
+API & Controllers
+Controllers live in controllers/. Routes (mounting) occur in app.js — follow the patterns used by existing controllers and wrap async handlers with catchAsyncError.
 
-    ```sh
-    npm install
-    ```
+Tests & CI
+No tests detected. Recommended:
 
-3. Create a  file in the root directory and add your environment variables. You can use the  file as a reference.
+Add unit/integration tests under tests/
+Add test script to package.json
+Deployment Notes
+Set NODE_ENV=production and update cookie secure/sameSite values.
+Keep secrets in a secure store (env vars / secret manager).
+Verify Cloudinary, SMTP, and DB credentials for production.
+Contributing
+Follow existing coding patterns.
+Use catchAsyncError to wrap async route handlers.
+Update documentation and add tests for new features.
+If you want, I can:
 
-## Configuration
-
-The application requires the following environment variables to be set:
-
-- : The port on which the server will run.
-- : The local IP address of the server.
-- `ORIGIN`: The allowed origins for CORS.
-- : The MongoDB connection URL.
-- : The Redis connection URL.
-- : The secret key for activation tokens.
-- : The secret key for refresh tokens.
-- : The secret key for access tokens.
-- : The expiration time for access tokens.
-- : The expiration time for refresh tokens.
-- : The SMTP host for sending emails.
-- : The SMTP port for sending emails.
-- : The SMTP service for sending emails.
-- : The SMTP email address for sending emails.
-- : The SMTP password for sending emails.
-
-## Usage
-
-1. Start the server:
-
-    ```sh
-    npm run dev
-    ```
-
-2. The server will be running on `http://<LOCAL_IP_ADDRESS>:<PORT>`.
-
-## API Endpoints
-
-### Auth
-
-- `POST /api/auth/register`: Register a new user.
-- `POST /api/auth/activate-user`: Activate a user account.
-- `POST /api/auth/login`: Login a user.
-- `POST /api/auth/social-auth`: Social authentication.
-- `GET /api/auth/refreshtoken`: Refresh access token.
-- `GET /api/auth/logout`: Logout a user.
-- `GET /api/auth/info`: Get user info (requires authentication).
-- `PUT /api/auth/update-info`: Update user info (requires authentication).
-- `PUT /api/auth/update-password`: Update user password (requires authentication).
-
-### User
-
-- `GET /api/test`: Test the API.
-
-## License
-
-This project is licensed under the MIT License.
+Add a polished README.md commit with this content.
+Generate endpoint documentation for each controller (I will read the route mounting in app.js and controllers in controllers/).
