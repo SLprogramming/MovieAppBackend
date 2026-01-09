@@ -333,6 +333,7 @@ export const updateAccessToken = CatchAsyncError(async (req,res,next) =>{
 
     // 🔥 Check if refresh token is valid for this user
    if (!user.isValidSession(refresh_token)) {
+    user.removeSession(refresh_token)
   return next(new ErrorHandler("Session expired or invalid", 403));
 }
 
