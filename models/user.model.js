@@ -163,20 +163,32 @@ userSchema.methods.activatePremium = async function(days) {
 
   return this.save();
 }
-
 userSchema.methods.addSession = async function(token, device = "Unknown") {
   const MAX_SESSIONS = 2;
 
+  // 1️⃣ Remove expired sessions first
+  this.sessions = this.sessions.filter(session => {
+    try {
+      const decoded = jwt.verify(session.token, process.env.REFRESH_TOKEN || "");
+      return true; // still valid
+    } catch (err) {
+      // token expired or invalid
+      return false; // remove it
+    }
+  });
+
+  // 2️⃣ Check if we still exceed max sessions
   if (this.sessions.length >= MAX_SESSIONS) {
-    // block new login
-    return false;
+    return false; // block new login
   }
 
+  // 3️⃣ Add new session
   this.sessions.push({ device, token });
   await this.save();
 
   return true;
 };
+
 
 
 
