@@ -71,7 +71,7 @@ Create a `.env` file in the root directory with the following variables:
 # Server Configuration
 PORT=8000
 NODE_ENV=development
-LOCAL_IP_ADDRESS=192.168.110.109
+LOCAL_IP_ADDRESS=192.168.110.112
 CLIENT_URL=https://movie-app-website-mu.vercel.app
 
 # Database
