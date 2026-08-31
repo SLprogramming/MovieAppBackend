@@ -9,7 +9,7 @@ import planRouter from "./routes/plan.route.js";
 import purchaseRequestRouter from "./routes/purchaseRequest.route.js";
 import paymentTypeRouter from "./routes/paymentType.route.js";
 import bankAccountRouter from "./routes/bankAccount.route.js";
-import { getIO } from "./utils/socket.js";
+import pusher from "./utils/pusher.js";
 
 dotEnv.config();
 
@@ -60,14 +60,16 @@ app.use("/api/payment", paymentTypeRouter);
 app.use("/api/bankAccount", bankAccountRouter);
 
 //api
-app.get("/api/test", (req, res, next) => {
-  const io = getIO();
-
-  io.to("admins").emit("purchaseRequest:created", "hello");
-  res.status(200).json({
-    success: true,
-    message: "api is working",
-  });
+app.get("/api/test", async (req, res, next) => {
+  try {
+    await pusher.trigger("admins", "purchaseRequest:created", "hello");
+    res.status(200).json({
+      success: true,
+      message: "api is working",
+    });
+  } catch (error) {
+    next(error);
+  }
 });
 
 app.all("*", (req, res, next) => {

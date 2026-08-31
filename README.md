@@ -9,7 +9,7 @@ A comprehensive Node.js and Express.js backend API for the MovieApp platform, pr
 - **Premium Subscriptions**: Plan management with expiration tracking and premium features
 - **Payment Processing**: Support for multiple payment types and bank account management
 - **Purchase Requests**: Admin approval system for premium purchases with image uploads
-- **Real-time Notifications**: Socket.io integration for real-time updates
+- **Real-time Notifications**: Pusher Channels integration for real-time updates
 - **Media Uploads**: Cloudinary integration for image uploads
 - **Email Notifications**: SMTP-based email system for activation and password reset
 - **Session Management**: Multi-device session handling with Redis support
@@ -23,7 +23,7 @@ A comprehensive Node.js and Express.js backend API for the MovieApp platform, pr
 - **Authentication**: JWT (JSON Web Tokens)
 - **File Uploads**: Multer + Cloudinary
 - **Email**: Nodemailer with EJS templates
-- **Real-time**: Socket.io
+- **Real-time**: Pusher Channels
 - **Caching**: Redis (configured but commented in code)
 - **Validation**: Custom validation with regex patterns
 - **Security**: bcryptjs for password hashing, CORS configuration
@@ -218,7 +218,7 @@ MovieAppBackend/
 └── utils/                 # Utility functions
     ├── jwt.js            # JWT token utilities
     ├── sendMail.js       # Email sending utility
-    ├── socket.js         # Socket.io configuration
+    ├── pusher.js        # Pusher configuration
     └── ErrorHandler.js   # Custom error handler
 ```
 

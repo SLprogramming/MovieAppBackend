@@ -2,7 +2,7 @@ import ErrorHandler from "../utils/ErrorHandler.js";
 import CatchAsyncError from "../middleware/catchAsyncError.js";
 import PurchaseRequest from "../models/purchaseRequest.model.js";
 import cloudinary from "../config/cloudinary.js";
-import { getIO } from "../utils/socket.js";
+import pusher from "../utils/pusher.js";
  
 // get all
 export const getAllPurchaseRequest = CatchAsyncError(async (req, res, next) => {
@@ -45,7 +45,6 @@ export const getPurchaseRequestByUserId = CatchAsyncError(async (req, res, next)
 export const createPurchaseRequest = CatchAsyncError(async (req, res, next) => {
     try {
         const { user_id, plan_id, transitionNumber ,bankAccount_id } = req.body;
- const io = getIO();
         if (!req.file) {
             return res.status(400).json({ message: "Image is required" });
         }
@@ -66,7 +65,7 @@ export const createPurchaseRequest = CatchAsyncError(async (req, res, next) => {
             bankAccount_id
         });
           if(purchaseRequest){
-            io.to(`admins`).emit("purchaseRequest:created", purchaseRequest);
+            await pusher.trigger("admins", "purchaseRequest:created", purchaseRequest);
         }
         res.status(201).json({
             success: true,
@@ -116,9 +115,8 @@ export const changePurchaseRequestStatus = CatchAsyncError(async (req, res, next
             return next(new ErrorHandler("Purchase request not found", 404));
         }
         let data = await request.changeStatus(status)
-         const io = getIO();
         if(data){
-            io.to(`user_${data.user_id}`).emit("overAll:change", 'inquiry');
+            await pusher.trigger(`user_${data.user_id}`, "overAll:change", "inquiry");
         }
         return res.status(200).json({success:true,data})
     } catch (error) {

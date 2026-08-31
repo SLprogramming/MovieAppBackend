@@ -14,7 +14,7 @@ import { decode } from "punycode";
 import { getUserById } from "../services/user.service.js";
 import { getUserMediaList } from "./movie.controller.js";
 import { fetchFromTMDB } from "../services/tmdb.service.js";
-import { getIO } from "../utils/socket.js";
+import pusher from "../utils/pusher.js";
 
 dotEnv.config();
 
@@ -209,7 +209,6 @@ return res.status(400).json({ success: false, message:'User Not Found!' });
 //login user
 export const loginUser = CatchAsyncError(async (req,res,next) => {
   try {
-      const io = getIO();
     const {email,password} = req.body
     if(!email || !password) {
       return next(new ErrorHandler("Please enter email and password",400))
@@ -228,7 +227,7 @@ export const loginUser = CatchAsyncError(async (req,res,next) => {
     // create tokens
     const accessToken = user.SignAccessToken()
     const refreshToken = user.SignRefreshToken()
-io.to(`user_${user._id}`).emit("overAll:change", 'fetchMe');
+await pusher.trigger(`user_${user._id}`, "overAll:change", "fetchMe");
     // try to add session
     const allowed = await user.addSession(refreshToken, req.headers['user-agent'] || "Unknown")
 
@@ -256,7 +255,6 @@ io.to(`user_${user._id}`).emit("overAll:change", 'fetchMe');
 //logout user
 export const logoutUser = CatchAsyncError(async (req,res,next) => {
   try {
-       const io = getIO();
     const refresh_token = req.cookies.refresh_token
     if (req.user && refresh_token) {
       await req.user.removeSession(refresh_token)
@@ -264,7 +262,7 @@ export const logoutUser = CatchAsyncError(async (req,res,next) => {
 
     res.cookie("access_token","",{maxAge:1})
     res.cookie("refresh_token","",{maxAge:1})
-   io.to(`user_${req.user?._id}`).emit("overAll:change", 'fetchMe');
+   await pusher.trigger(`user_${req.user?._id}`, "overAll:change", "fetchMe");
     res.status(200).json({
       success:true,
       message:"Logged out successfully!"
@@ -277,7 +275,6 @@ export const logoutUser = CatchAsyncError(async (req,res,next) => {
 //remove session by id
 export const removeSessionById = CatchAsyncError(async (req, res, next) => {
   try {
-      const io = getIO();
     const { sessionId } = req.body;
     const userId = req.user?._id;
 
@@ -297,7 +294,7 @@ export const removeSessionById = CatchAsyncError(async (req, res, next) => {
 
     user.sessions.splice(sessionIndex, 1);
     await user.save();
-   io.to(`user_${user?._id}`).emit("overAll:change", 'fetchMe');
+   await pusher.trigger(`user_${user?._id}`, "overAll:change", "fetchMe");
 
     res.status(200).json({
       success: true,
