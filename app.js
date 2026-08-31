@@ -40,10 +40,16 @@ app.use(
   }),
 );
 
-// app.use(cors({
-//   origin: "http://192.168.110.125:5173", // exact frontend origin
-//   credentials: true,                      // 🔑 allow cookies
-// }));
+app.use(
+  cors({
+    origin: [
+      "http://192.168.110.125:5173",
+      "http://localhost:5173",
+      "http://localhost:5174",
+    ], // exact frontend origin
+    credentials: true, // 🔑 allow cookies
+  }),
+);
 
 // app.use(cors())
 
