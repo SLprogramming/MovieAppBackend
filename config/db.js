@@ -1,15 +1,43 @@
-import dotEnv from "dotenv"
-import mongoose from "mongoose"
-dotEnv.config()
+import mongoose from "mongoose";
+
+const MONGODB_URI = process.env.DB_URL;
+
+if (!MONGODB_URI) {
+  throw new Error("Please define the DB_URL environment variable inside .env");
+}
+
+// Global cache prevents multiple connections across serverless invocations
+let cached = global.mongoose;
+
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null };
+}
 
 export const connectDB = async () => {
-	try {
-		const conn = await mongoose.connect(process.env.DB_URL);
-		console.log("MongoDB connected: " + conn.connection.host);
-	} catch (error) {
-		console.error("Error connecting to MONGODB: " + error.message);
-		// process.exit(1); // 1 means there was an error, 0 means success
-		setTimeout(connectDB,5000)
-	}
-};
+  if (cached.conn) {
+    return cached.conn;
+  }
 
+  if (!cached.promise) {
+    const opts = {
+      bufferCommands: false, // Fails instantly instead of hanging for 10s if DB is unreachable
+    };
+
+    cached.promise = mongoose
+      .connect(MONGODB_URI, opts)
+      .then((mongooseInstance) => {
+        console.log("MongoDB connected: " + mongooseInstance.connection.host);
+        return mongooseInstance;
+      });
+  }
+
+  try {
+    cached.conn = await cached.promise;
+  } catch (e) {
+    cached.promise = null; // Reset promise cache on failure to allow retries
+    console.error("Error connecting to MONGODB: " + e.message);
+    throw e;
+  }
+
+  return cached.conn;
+};
