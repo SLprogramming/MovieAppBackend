@@ -43,7 +43,7 @@ app.use(
 app.use(
   cors({
     origin: [
-      "http://192.168.110.125:5173",
+      "https://movie-app-website-mu.vercel.app/",
       "http://localhost:5173",
       "http://localhost:5174",
     ], // exact frontend origin
