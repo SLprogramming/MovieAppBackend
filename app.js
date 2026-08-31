@@ -22,34 +22,33 @@ app.use(cookieParser());
 
 const allowedOrigins = [
   "https://movie-app-website-mu.vercel.app",
-  "http://192.168.120.20:5173",
-  "http://192.168.120.20:5174",
+  "http://localhost:5174",
+  "http://localhost:5173", // Added localhost for convenience
 ];
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      if (!origin) return callback(null, true); // allow non-browser requests
-      if (allowedOrigins.includes(origin)) {
-        callback(null, true); // ✅ allow this origin
+      // Allow requests with no origin (Mobile apps, Postman, curl)
+      if (!origin) return callback(null, true);
+
+      // Remove trailing slash if present for strict comparison
+      const formattedOrigin = origin.replace(/\/$/, "");
+
+      if (allowedOrigins.includes(formattedOrigin)) {
+        callback(null, true);
       } else {
-        callback(new Error("Not allowed by CORS"));
+        callback(null, false); // Block gracefully
       }
     },
-    credentials: true, // allow cookies
+    credentials: true,
   }),
 );
 
-app.use(
-  cors({
-    origin: [
-      "https://movie-app-website-mu.vercel.app/",
-      "http://localhost:5173",
-      "http://localhost:5174",
-    ], // exact frontend origin
-    credentials: true, // 🔑 allow cookies
-  }),
-);
+// app.use(cors({
+//   origin: "http://192.168.110.125:5173", // exact frontend origin
+//   credentials: true,                      // 🔑 allow cookies
+// }));
 
 // app.use(cors())
 
